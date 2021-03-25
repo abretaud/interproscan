@@ -40,7 +40,7 @@ then
     exit 1
 fi
 
-python initial_setup.py
+python3 initial_setup.py
 
 "$JAVA" \
  -XX:ParallelGCThreads=8 \
