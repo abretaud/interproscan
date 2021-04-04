@@ -49,8 +49,8 @@
         <property name="dependsUpon" ref="stepPIRSRWriteFastaFile"/>
         <property name="stepDescription" value="Run hmmer3 Binary for selected proteins"/>
         <property name="forceHmmsearch" value="${pirsr.hmmsearch.force}"/>
-        <property name="fullPathToHmmsearchBinary" value="${binary.hmmer3.hmmsearch.path}"/>
-        <property name="fullPathToHmmScanBinary" value="${binary.hmmer3.hmmscan.path}"/>
+        <property name="fullPathToHmmsearchBinary" value="${binary.hmmer33.hmmsearch.path}"/>
+        <property name="fullPathToHmmScanBinary" value="${binary.hmmer33.hmmscan.path}"/>
         <property name="binarySwitches" value="${hmmer3.hmmsearch.switches.pirsr} ${hmmer3.hmmsearch.cpu.switch.pirsr}"/>
         <property name="fullPathToHmmFile" value="${pirsr.hmm.path}"/>
         <property name="fastaFileNameTemplate" ref="fastaFileNameTemplate"/>
