@@ -16,6 +16,7 @@
 
 package uk.ac.ebi.interpro.scan.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
@@ -35,6 +36,7 @@ import java.util.Set;
  */
 @Entity
 @XmlType(name = "PantherMatchType")
+@JsonIgnoreProperties({"annotations"})
 public class PantherMatch extends Match<PantherMatch.PantherLocation> {
 
     @Column(nullable = false)
@@ -46,15 +48,23 @@ public class PantherMatch extends Match<PantherMatch.PantherLocation> {
     @Column(nullable = false)
     private double score;
 
+    @Column
+    private String annotationsNodeId;
+
+    @Column (length = 8000)
+    private String annotations;
 
     protected PantherMatch() {
     }
 
-    public PantherMatch(Signature signature, String signatureModels, Set<PantherLocation> locations, double evalue, String familyName, double score) {
+    public PantherMatch(Signature signature, String signatureModels, Set<PantherLocation> locations,
+                        String annotationsNodeId, double evalue, String familyName, double score, String annotations) {
         super(signature, signatureModels, locations);
+        setAnnotationsNodeId(annotationsNodeId);
         setEvalue(evalue);
         this.familyName = familyName;
         this.score = score;
+        setAnnotations(annotations);
     }
 
     public Object clone() throws CloneNotSupportedException {
@@ -62,7 +72,17 @@ public class PantherMatch extends Match<PantherMatch.PantherLocation> {
         for (PantherLocation location : this.getLocations()) {
             clonedLocations.add((PantherLocation) location.clone());
         }
-        return new PantherMatch(this.getSignature(), this.getSignatureModels(), clonedLocations, this.getEvalue(), this.getFamilyName(), this.getScore());
+        return new PantherMatch(this.getSignature(), this.getSignatureModels(), clonedLocations,
+                this.getAnnotationsNodeId(), this.getEvalue(), this.getFamilyName(), this.getScore(), this.getAnnotations());
+    }
+
+    @XmlAttribute(required = true)
+    public String getAnnotationsNodeId() {
+        return annotationsNodeId;
+    }
+
+    public void setAnnotationsNodeId(String annotationsNodeId) {
+        this.annotationsNodeId = annotationsNodeId;
     }
 
     @XmlAttribute(required = true)
@@ -90,6 +110,15 @@ public class PantherMatch extends Match<PantherMatch.PantherLocation> {
 
     public void setScore(double score) {
         this.score = score;
+    }
+
+    public String getAnnotations() {
+        return annotations;
+    }
+
+    //@XmlAttribute(required = true)
+    public void setAnnotations(String annotations) {
+        this.annotations = annotations;
     }
 
     @Override

@@ -7,7 +7,6 @@ import uk.ac.ebi.interpro.scan.io.match.MatchParser;
 import uk.ac.ebi.interpro.scan.model.HmmBounds;
 import uk.ac.ebi.interpro.scan.model.SignatureLibrary;
 import uk.ac.ebi.interpro.scan.model.raw.PantherRawMatch;
-import uk.ac.ebi.interpro.scan.util.Utilities;
 
 /**
  * Parser for PANTHER output. Parses a single line of the raw result.
@@ -40,6 +39,10 @@ public final class PantherMatchParser
 
     @Override
     protected PantherRawMatch createMatch(String line) {
+        if (line.startsWith("query_id")) {
+            //LOGGER.warn("This is a header line .");
+            return null;
+        }
         if (line == null || line.length() == 0) {
             LOGGER.warn("Couldn't parse the given raw match line, because it is NULL or of length 0.");
             return null;
@@ -53,32 +56,64 @@ public final class PantherMatchParser
         }
         final String[] splitLine = line.split("\\t");
         //Utilities.verboseLog(110, "splitLine.length: " + splitLine.length);
-        if (splitLine.length == 9) {
+        /*
+            Header of TreeGrafter's output:
+            query_id	panther_id	panther_sf	node_id	score	evalue	dom_score	dom_evalue	hmm_start	hmm_end	ali_start	ali_end	env_start	env_end	annotations
+         */
+        if (splitLine.length >= 15) {
             //Protein Id
             final String sequenceIdentifier = splitLine[0].trim();
             //Parse Panther family ID
-            final String modelId = splitLine[1].trim();
-            //Parse family name
-            final String familyName = splitLine[2].trim();
-            //Parse E-Value
-            final String eValueString = splitLine[3].trim();
+            final String pantherFamilyId = splitLine[1].trim();
+            //Parse sub family id
+            final String subFamilyModelIdPart = splitLine[2].trim();
+            String subFamilyModelId = null;
+            //the subfamily maybe empty
+            if ( subFamilyModelIdPart.strip().length() != 0) {
+                subFamilyModelId = pantherFamilyId + ":" + subFamilyModelIdPart;
+            }
+            //Parse  annotation node Id
+            final String annotationsNodeId = splitLine[3].trim();
             //Hit score provided by Panther
             final String scoreString = splitLine[4].trim();
-            //Hit HMM start and end
-            final String hmmLocationStartEnd = splitLine[5].trim();
+            //Parse E-Value
+            final String eValueString = splitLine[5].trim();
+            //Hit domain score provided by Panther
+            final String domainScoreString = splitLine[6].trim();
+            //Hit domain evalue provided by Panther
+            final String domainEValueStringString = splitLine[7].trim();
+            //Hit HMM start
+            final String hmmLocationStartString = splitLine[8].trim();
+            //Hit HMM end
+            final String hmmLocationEndString = splitLine[9].trim();
+            //Hit aligment start
+            final String aliLocationStartString = splitLine[10].trim();
             //Hit aligment start and end
-            final String aliLocationStartEnd = splitLine[6].trim();
-            //Hit envelope start and end
-            final String envLocationStartEnd = splitLine[7].trim();
-            // HMM length
-            final String hmmLengthString = splitLine[8].trim();
+            final String aliLocationEndString = splitLine[11].trim();
+            //Hit envelope start
+            final String envLocationStartString = splitLine[12].trim();
+            //Hit envelope end
+            final String envLocationEndString = splitLine[13].trim();
+            //PAINT annotations
+            String annotations = splitLine[14].trim();
+
+            if (annotations.equals("-")) {
+                annotations = "";
+            } else if (annotations.length() >= 8000) {
+                annotations = annotations.substring(0, 7990);
+            }
 
             //Transform raw parsed values
             double score = 0.0d;
             double evalue = 0.0d;
-            int[] hmmLocation = parseLocation(hmmLocationStartEnd);
-            int[] aliLocation = parseLocation(aliLocationStartEnd);
-            int[] envLocation = parseLocation(envLocationStartEnd);
+
+            int hmmLocationStart = Integer.parseInt(hmmLocationStartString);
+            int hmmLocationEnd = Integer.parseInt(hmmLocationEndString);
+            int aliLocationStart = Integer.parseInt(aliLocationStartString);
+            int aliLocationEnd = Integer.parseInt(aliLocationEndString);
+            int envLocationStart = Integer.parseInt(envLocationStartString);
+            int envLocationEnd = Integer.parseInt(envLocationEndString);
+
             int hmmLength = 0;
 
             if (scoreString.length() > 0 && !".".equals(scoreString)) {
@@ -87,26 +122,27 @@ public final class PantherMatchParser
             if (eValueString.length() > 0 && !".".equals(eValueString)) {
                 evalue = Double.parseDouble(eValueString);
             }
-            if (hmmLengthString.length() > 0) {
-                hmmLength = Integer.parseInt(hmmLengthString);
-            }
 
             return new PantherRawMatch(
                     sequenceIdentifier,
-                    modelId,
+                    pantherFamilyId,
+                    subFamilyModelId,
+                    annotationsNodeId,
                     getSignatureLibraryRelease(),
-                    aliLocation[0],
-                    aliLocation[1],
+                    aliLocationStart,
+                    aliLocationEnd,
                     evalue,
                     score,
-                    familyName,
-                    hmmLocation[0],
-                    hmmLocation[1],
+                    pantherFamilyId,
+                    hmmLocationStart,
+                    hmmLocationEnd,
                     hmmLength,
-                    HmmBounds.calculateHmmBounds(envLocation[0], envLocation[1], aliLocation[0], aliLocation[1]),
-                    envLocation[0],
-                    envLocation[1]);
+                    HmmBounds.calculateHmmBounds(envLocationStart,envLocationEnd, aliLocationStart, aliLocationEnd),
+                    envLocationStart,
+                    envLocationEnd,
+                    annotations);
         }
+
         LOGGER.warn("Couldn't parse the given raw match line, because it is of an unexpected format.");
         LOGGER.warn("Unexpected Raw match line: " + line);
         return null;
